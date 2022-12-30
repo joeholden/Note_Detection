@@ -5,16 +5,18 @@ import scipy
 from scipy import fftpack, signal
 import numpy as np
 import pandas as pd
-from lookup_note import return_note_from_freq, return_frequency_of_note
+from lookup_note import return_note_from_freq, return_frequency_of_note, find_multiples
 
-path = 'C:/Users/joema/Documents/Sound recordings/c chord.m4a'
+path = 'C:/Users/joema/Documents/Sound recordings/Recording (17).m4a'
 
 
-def find_frequencies(audio_path, time_limits=None, prom=7, show_plot=True, plot_width=(25, 4200),
-                     plot_harmonic_vline=False, num_harmonics=6):
+def find_frequencies(audio_path, time_limits=None, prom=7, tolerance=1.05, show_plot=True, plot_width=(25, 4200),
+                     scatter=True, plot_harmonic_vline=False, num_harmonics=6):
     """
     Takes in Audio file and outputs a list containing information about frequency peaks in FFT.
 
+    :param scatter: boolean to plot scatter points on peaks or not
+    :param tolerance:
     :param audio_path: path to the audio file
     :param time_limits:
     :param prom: Prominence (Intensity) cut off for peak detection
@@ -58,11 +60,27 @@ def find_frequencies(audio_path, time_limits=None, prom=7, show_plot=True, plot_
     all_peak_information = [(i, j, return_note_from_freq(i)) for (i, j) in all_peak_information]  # add note guesses
     print(all_peak_information)
 
+    peak_list_copy = all_peak_information
+
+    def find_multiples(fundamental):
+        multiples = [fundamental * i for i in range(1, 11)]
+        return multiples
+
+    def is_valid(input_1, input_2):
+        if -1 * tolerance * input_1 <= input_2 <= tolerance * input_1:
+            return True
+        else:
+            return False
+
+    for peak in all_peak_information:
+        mul = find_multiples(peak)
+
     # Plot Scatter Points of Peaks
-    frequencies_of_peaks = []
-    for peak, value in enumerate(peaks[0]):
-        plt.scatter(xf[peaks[0]], [intensity_y[i] for i in peaks[0]], s=50, color='#ED7014')
-        frequencies_of_peaks.append(round(xf[peaks[0]][peak], 2))
+    if scatter:
+        frequencies_of_peaks = []
+        for peak, value in enumerate(peaks[0]):
+            plt.scatter(xf[peaks[0]], [intensity_y[i] for i in peaks[0]], s=50, color='#ED7014')
+            frequencies_of_peaks.append(round(xf[peaks[0]][peak], 2))
 
     prominences = peaks[1]['prominences']
     index_highest_peak = peaks[0][list(prominences).index(max(prominences))]
@@ -92,4 +110,5 @@ def find_frequencies(audio_path, time_limits=None, prom=7, show_plot=True, plot_
     return all_peak_information
 
 
-find_frequencies(path, plot_width=(0, 2000))
+p = find_frequencies(path, plot_width=(0, 1500), show_plot=False, scatter=False, prom=25)
+find_multiples(p, tolerance=0.02)
